@@ -1,0 +1,9 @@
+module Main (main) where
+
+import qualified Prelude as P
+
+-- | Hue hue Comment
+
+main :: IO ()
+main = do
+  P.print $ "Hello Friend"

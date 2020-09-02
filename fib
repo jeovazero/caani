@@ -1,0 +1,19 @@
+-- Solution for the problem:
+-- https://www.hackerrank.com/challenges/fibonacci-fp/problem
+-- 
+-- Author: jeovazero
+--
+import Data.Array ((!), listArray)
+
+modd = 10 ^ 8 + 7
+maxx = 10000
+
+memFib = fib
+  where
+    fib 0 = 0
+    fib 1 = 1
+    fib n = mod (f ! (n - 1) + f ! (n - 2)) modd
+    f = listArray (0, maxx) (map fib [0..maxx])
+
+main = do
+  interact $ unlines . map (show . memFib . read). tail . lines
