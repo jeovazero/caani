@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Lib.Color (fromHsvNorm,add) where
+module Caani.Color (fromHsvNorm,add) where
 
 import Data.Fixed (mod')
 

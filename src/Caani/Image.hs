@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Lib.Image (createImage, savePng, MutImage,toPixel) where
+module Caani.Image (createImage, savePng, MutImage,toPixel) where
 
 import Codec.Picture
 import Data.Vector (empty, (!), Vector, fromList)

@@ -1,16 +1,19 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Caani (caaniFromFile,caaniFromText) where
+module Caani (caaniFromFile,caani, CaaniConfig(..)) where
 
 import qualified Data.Text.IO as TIO
 import qualified Data.Text as T
-import Lib.Highlight (highlightHaskell)
-import Lib.Image (toPixel, createImage, savePng)
-import Lib.Font (loadFontFace, loadChar, gWidth)
-import Lib.Render (WorldConfig(..), renderLine)
+import Caani.Highlight (highlightHaskell)
+import Caani.Image (toPixel, createImage, savePng)
+import Caani.Font (FontFace, loadFontFace, loadChar, gWidth)
+import Caani.Render (WorldConfig(..), renderLine)
+import Caani.Error (rightOrThrow, tryIO, CaaniError(..), CaaniErrorType(..), tryOrThrow)
 import Graphics.Rasterific
 import Codec.Picture (convertRGBA8, writePng, readPng, Image(..), PixelRGBA8(..))
 import Graphics.Rasterific.Texture (uniformTexture)
 import Codec.Picture.Types (thawImage)
+import Control.Exception (throwIO)
 
 -- | Naive :(
 dimensions :: T.Text -> (Int, Int)
@@ -20,15 +23,13 @@ dimensions text = (maximum $ fmap T.length lns, length lns)
 sizePx = 24
 margin = 2 * sizePx
 
-highlightWith fontPath tag code bg outPath = do
-  face <- loadFontFace fontPath sizePx
+highlightWith :: FontFace -> Image PixelRGBA8 -> (T.Text,(Int,Int)) -> (Int, Int, Int) -> String -> IO ()
+highlightWith face tagBitmap (code,(w,h)) background outPath = do
   glyph <- loadChar face 0 'M'
   let base = gWidth glyph
   
   -- text <- TIO.getContents
   let tokens = highlightHaskell code
-  let (w,h) = dimensions code
-
   let width = w * base + margin
   let height = (truncate $ fromIntegral (h * sizePx) * 1.2) + margin
   let frameWidth = width + 76 + margin
@@ -36,7 +37,7 @@ highlightWith fontPath tag code bg outPath = do
   let fullWidth = frameWidth + 2 * margin
   let fullHeight = frameHeight + 2 * margin
 
-  let im = drawFrame tag (fullWidth, fullHeight) (frameWidth, frameHeight) bg
+  let im = drawFrame tagBitmap (fullWidth, fullHeight) (frameWidth, frameHeight) background
   mutImage <- thawImage im
  
   let config = WorldConfig {
@@ -49,7 +50,7 @@ highlightWith fontPath tag code bg outPath = do
       }
 
   case tokens of
-    Nothing -> putStrLn "Error on parsing"
+    Nothing -> throwIO $ CaaniError InvalidCode
     Just colorWords -> do
       let t = zipWith (\a b -> (a,b)) (colorWords) [0..]
       sequence_ $ fmap (\(cws,ln) -> renderLine config cws ln) t
@@ -74,25 +75,27 @@ drawFrame tag (fw,fh) (w,h) bgColor =
     h' = h - 2
     mh = fromIntegral $ div (fh - h) 2
 
-caaniFromFile :: String -> String -> String -> String -> IO ()
-caaniFromFile fontPath tagPath codePath outPath = do
-  eTagRaw <- readPng tagPath
-  text <- TIO.readFile codePath
-  case eTagRaw of
-    Left err -> putStrLn err
-    Right tagRaw -> do
-      let tag = convertRGBA8 tagRaw
-      highlightWith fontPath tag text bg outPath
+data CaaniConfig
+  = CaaniConfig
+  { fontPath :: String
+  , tagPath :: String
+  , boundary :: (Int,Int)
+  , outPath :: String
+  , code :: T.Text
+  }
 
-caaniFromText :: String -> String -> T.Text -> String -> IO ()
-caaniFromText fontPath tagPath code outPath = do
-  eTagRaw <- readPng tagPath
-  case eTagRaw of
-    Left err -> putStrLn err
-    Right tagRaw -> do
-      let tag = convertRGBA8 tagRaw
-      highlightWith fontPath tag code bg outPath
-    
-caani :: T.Text -> String -> IO ()
-caani code outPath = do
-  caaniFromText "./fonts/FiraCode-Medium.ttf" "./haskell-tag.png" code outPath
+caaniFromFile :: String -> CaaniConfig -> IO ()
+caaniFromFile filepath config = do
+  text <- tryOrThrow (TIO.readFile filepath) LoadFileError
+  caani (config { code = text })
+
+caani :: CaaniConfig -> IO ()
+caani (CaaniConfig {..}) = do
+  tagRaw <- rightOrThrow (readPng tagPath) LoadTagError
+  let tag = convertRGBA8 tagRaw
+  fontFace <- tryOrThrow (loadFontFace fontPath sizePx) LoadFontError
+  let (w,h) = dimensions code
+  let (boundW, boundH) = boundary
+  case (w > boundW,h > boundH) of
+    (False, False) -> highlightWith fontFace tag (code,(w,h)) bg outPath
+    _ -> throwIO $ CaaniError BoundaryLimit

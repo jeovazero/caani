@@ -1,4 +1,4 @@
-module Lib.Font (Glyph(..),loadChar,loadFontFace,FontFace) where
+module Caani.Font (Glyph(..),loadChar,loadFontFace,FontFace) where
 
 import qualified Graphics.Rendering.FreeType.Internal as FT
 import Foreign (Storable(peek), alloca)

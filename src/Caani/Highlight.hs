@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Lib.Highlight (highlightHaskell, ColorWord(..)) where
+module Caani.Highlight (highlightHaskell, ColorWord(..)) where
 
 import Codec.Picture
 import Data.Bits (Bits(complement, shiftR, (.&.)))

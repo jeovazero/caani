@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Lib.Render (renderLine, WorldConfig(..)) where
+module Caani.Render (renderLine, WorldConfig(..)) where
 
 import qualified Graphics.Rendering.FreeType.Internal as FT
 import qualified Graphics.Rendering.FreeType.Internal.Library as FTL
@@ -16,10 +16,10 @@ import qualified Data.Set as S
 import Debug.Trace (traceM)
 import Data.Fixed (mod')
 import qualified Data.Text as T
-import qualified Lib.Font as Font (Glyph(..), FontFace, loadChar)
-import qualified Lib.Highlight as H (ColorWord(..))
-import Lib.Image (MutImage)
-import Lib.Color (fromHsvNorm, add)
+import qualified Caani.Font as Font (Glyph(..), FontFace, loadChar)
+import qualified Caani.Highlight as H (ColorWord(..))
+import Caani.Image (MutImage)
+import Caani.Color (fromHsvNorm, add)
 
 data WorldConfig = WorldConfig
   { wFace :: Font.FontFace
