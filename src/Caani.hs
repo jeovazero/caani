@@ -8,36 +8,46 @@ import Caani.Highlight (highlightHaskell)
 import Caani.Image (toPixel, createImage, savePng)
 import Caani.Font (FontFace, loadFontFace, loadChar, gWidth)
 import Caani.Render (WorldConfig(..), renderLine)
-import Caani.Error (rightOrThrow, tryIO, CaaniError(..), CaaniErrorType(..), tryOrThrow)
+import Caani.Error (tryCaani, caanify, CaaniError(..), CaaniErrorType(..), tryOrThrow)
 import Graphics.Rasterific
 import Codec.Picture (convertRGBA8, writePng, readPng, Image(..), PixelRGBA8(..))
 import Graphics.Rasterific.Texture (uniformTexture)
 import Codec.Picture.Types (thawImage)
-import Control.Exception (throwIO)
+import Control.Exception (SomeException(..), Handler(..), catches, throwIO)
 
 -- | Naive :(
 dimensions :: T.Text -> (Int, Int)
 dimensions text = (maximum $ fmap T.length lns, length lns)
   where lns = T.lines text
 
+sizePx, margin :: Int
 sizePx = 24
 margin = 2 * sizePx
+corner, flagWidth, flagHeight, topBorderHeight, offsetFlag :: Float
+corner = 11
+flagWidth = 44
+flagHeight = 56
+topBorderHeight = 20
+offsetFlag = 20
 
-highlightWith :: FontFace -> Image PixelRGBA8 -> (T.Text,(Int,Int)) -> (Int, Int, Int) -> String -> IO ()
-highlightWith face tagBitmap (code,(w,h)) background outPath = do
-  glyph <- loadChar face 0 'M'
+highlightWith :: FontFace -> Image PixelRGBA8 -> (T.Text,(Int,Int)) -> String -> IO ()
+highlightWith face tagBitmap (code,(w,h)) outPath = do
+  glyph <- loadChar face 0 'M' -- It can throw FreeTypeError
   let base = gWidth glyph
-  
-  -- text <- TIO.getContents
+  -- It's needed for the base width (monospace effect)
+  -- I'm considering that 'M' is the biggest
+
   let tokens = highlightHaskell code
   let width = w * base + margin
+  -- 1.2 is for the line height
   let height = (truncate $ fromIntegral (h * sizePx) * 1.2) + margin
+  -- 76 is a magic number XD
   let frameWidth = width + 76 + margin
   let frameHeight = height + margin
   let fullWidth = frameWidth + 2 * margin
   let fullHeight = frameHeight + 2 * margin
+  let im = drawFrame tagBitmap (fullWidth, fullHeight) (frameWidth, frameHeight)
 
-  let im = drawFrame tagBitmap (fullWidth, fullHeight) (frameWidth, frameHeight) background
   mutImage <- thawImage im
  
   let config = WorldConfig {
@@ -52,28 +62,38 @@ highlightWith face tagBitmap (code,(w,h)) background outPath = do
   case tokens of
     Nothing -> throwIO $ CaaniError InvalidCode
     Just colorWords -> do
-      let t = zipWith (\a b -> (a,b)) (colorWords) [0..]
-      sequence_ $ fmap (\(cws,ln) -> renderLine config cws ln) t
+      let t = zipWith (\a b -> (a,b)) colorWords [0..]
+      sequence_ $ fmap (\(cws,ln) -> renderLine config cws ln) t -- It can throw FreeTypeError
       savePng outPath mutImage
+      pure ()
+      
 
-bg = (229,229,229)
+primaryBackground, secondaryBackground, borderColor :: (Integer, Integer, Integer)
+primaryBackground = (229,229,229)
+secondaryBackground = (20,20,20)
+borderColor = (209,209,209)
 
-drawFrame :: Image PixelRGBA8 -> (Int,Int) -> (Int,Int) -> (Int,Int,Int) -> Image PixelRGBA8
-drawFrame tag (fw,fh) (w,h) bgColor =
-  renderDrawing fw fh (toPixel bgColor) $
-    withTexture (uniformTexture $ toPixel (20,20,20)) $ do
-      fill $ roundedRectangle (V2 mw mh') (fromIntegral w) (fromIntegral h') 11 11
-      withTexture (uniformTexture $ toPixel (209,209,209)) $ do
-          fill $ roundedRectangle (V2 mw mh) (fromIntegral w) (40) 9 9
-          withTexture (uniformTexture $ toPixel (20,20,20)) $ do
-            fill $ rectangle (V2 mw mh'') (fromIntegral w) 25
-            drawImageAtSize tag 0 (V2 (mw + 20) mh'') 44 56  
+drawFrame :: Image PixelRGBA8 -> (Int,Int) -> (Int,Int) -> Image PixelRGBA8
+drawFrame tag (fullW,fullH) (w,h) =
+  renderDrawing fullW fullH (toPixel primaryBackground) $ -- the main background
+    withTexture (uniformTexture $ toPixel secondaryBackground) $ do
+      fill $ roundedRectangle pointContainer intW intH' corner corner -- container
+      withTexture (uniformTexture $ toPixel borderColor) $ do -- top border context
+          fill $ roundedRectangle pointTopBorder intW 40 9 9 -- top border
+          withTexture (uniformTexture $ toPixel secondaryBackground) $ do -- code area context
+            fill $ rectangle pointCodeArea intW 25 -- code area
+            drawImageAtSize tag 0 pointFlag flagWidth flagHeight -- language flag
   where
-    mw = fromIntegral $ div (fw - w) 2
-    mh' = mh + 2
-    mh'' = mh + 20
-    h' = h - 2
-    mh = fromIntegral $ div (fh - h) 2
+    mW = fromIntegral $ div (fullW - w) 2
+    intW = fromIntegral w
+    mH = fromIntegral $ div (fullH - h) 2
+    mH' = mH + 2
+    mH'' = mH + topBorderHeight
+    pointContainer = V2 mW mH'
+    pointTopBorder = V2 mW mH
+    pointCodeArea = V2 mW mH''
+    pointFlag = V2 (mW + offsetFlag) mH''
+    intH' = fromIntegral $ h - 2
 
 data CaaniConfig
   = CaaniConfig
@@ -84,18 +104,32 @@ data CaaniConfig
   , code :: T.Text
   }
 
-caaniFromFile :: String -> CaaniConfig -> IO ()
+caaniFromFile :: String -> CaaniConfig -> IO (Either CaaniError ())
 caaniFromFile filepath config = do
-  text <- tryOrThrow (TIO.readFile filepath) LoadFileError
-  caani (config { code = text })
+  textE <- tryCaani (TIO.readFile filepath) (const LoadFileError)
+  case textE of
+    Right text -> caani (config { code = text })
+    Left err -> pure $ Left err
 
-caani :: CaaniConfig -> IO ()
+loadTagImage :: String -> IO (Either CaaniError (Image PixelRGBA8))
+loadTagImage tagPath =
+  readPng tagPath >>= pure . either
+    (const (Left $ CaaniError LoadTagError))
+    (Right . convertRGBA8)
+
+loadFontFace' :: Integral a => String -> a -> IO (Either CaaniError FontFace)
+loadFontFace' fontPath sizePx =
+  tryCaani (loadFontFace fontPath sizePx) (const LoadFontError)
+
+caani :: CaaniConfig -> IO (Either CaaniError ())
 caani (CaaniConfig {..}) = do
-  tagRaw <- rightOrThrow (readPng tagPath) LoadTagError
-  let tag = convertRGBA8 tagRaw
-  fontFace <- tryOrThrow (loadFontFace fontPath sizePx) LoadFontError
   let (w,h) = dimensions code
   let (boundW, boundH) = boundary
-  case (w > boundW,h > boundH) of
-    (False, False) -> highlightWith fontFace tag (code,(w,h)) bg outPath
-    _ -> throwIO $ CaaniError BoundaryLimit
+  tagE <- loadTagImage tagPath
+  fontFaceE <- loadFontFace' fontPath sizePx
+  case (w > boundW, h > boundH) of
+    (False, False) -> either (pure . Left) caanify $ do
+      tag <- tagE
+      fontFace <- fontFaceE
+      pure $ highlightWith fontFace tag (code,(w,h)) outPath
+    _ -> pure . Left $ CaaniError BoundaryLimit

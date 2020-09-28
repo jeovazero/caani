@@ -1,10 +1,10 @@
-module Caani.Font (Glyph(..),loadChar,loadFontFace,FontFace) where
+module Caani.Font (Glyph(..),loadChar,loadFontFace,FontFace, FreeTypeError(..)) where
 
 import qualified Graphics.Rendering.FreeType.Internal as FT
 import Foreign (Storable(peek), alloca)
 import qualified Graphics.Rendering.FreeType.Internal.Library as FTL
 import Foreign.C (CChar, withCString)
-import Control.Exception (throw)
+import Control.Exception (throw, try)
 import Control.Exception.Base (Exception)
 import qualified Graphics.Rendering.FreeType.Internal.Face as Face
 import qualified Graphics.Rendering.FreeType.Internal.GlyphSlot as GS
@@ -19,21 +19,25 @@ data FreeTypeError = FreeTypeError String
 
 instance Exception FreeTypeError
 
+tryFreeType :: IO a -> IO (Either FreeTypeError a)
+tryFreeType = try
+
+runFreeType :: IO FP.FT_Error -> IO ()
 runFreeType effect = do
   err <- effect
   case err of
-    0 -> pure ()
+    0 -> pure () -- FreeType error code. 0 means success.
     e -> throw (FreeTypeError $ show e)
 
-freeType :: IO FTL.FT_Library
-freeType = alloca $ \ptr -> do
+allocaFreeType :: IO FTL.FT_Library
+allocaFreeType = alloca $ \ptr -> do
   runFreeType $ FT.ft_Init_FreeType ptr
   peek ptr
 
 type FontFace = Face.FT_Face
 
-fontFace :: FTL.FT_Library -> String -> IO FontFace
-fontFace ftLib filepath = withCString filepath $ \cstr ->
+newFontFace :: FTL.FT_Library -> String -> IO FontFace
+newFontFace ftLib filepath = withCString filepath $ \cstr ->
   alloca $ \ptr -> do
     runFreeType $ FT.ft_New_Face ftLib cstr 0 ptr
     peek ptr
@@ -51,6 +55,7 @@ data Glyph = Glyph
   , gBuffer :: Vec.Vector Int
   }
 
+loadChar :: Face.FT_Face -> Int -> Char -> IO Glyph
 loadChar face base ' ' = pure $ Glyph 0 0 0 0 base Vec.empty
 loadChar face base '\t' = pure $ Glyph 0 0 0 0 (2 * base) Vec.empty
 loadChar face base chr = do
@@ -68,8 +73,11 @@ loadChar face base chr = do
   let vec = Vec.fromList $ fmap ubyteToInt arr
   pure $ Glyph w h (fromIntegral l) (fromIntegral t) base vec
 
+loadFontFace :: Integral a => String -> a -> IO FontFace
 loadFontFace filepath sizePx = do
-  ftLib <- freeType
-  face <- fontFace ftLib filepath
+  ftLib <- allocaFreeType
+  face <- newFontFace ftLib filepath
+  -- ft_Set_Pixel_Sizes :: face width height
+  -- "a value of 0 for one of the dimensions means ‘same as the other’"
   runFreeType $ FT.ft_Set_Pixel_Sizes face 0 (fromIntegral sizePx)
   pure face

@@ -41,4 +41,5 @@ executable caani
   -- other-extensions:
   build-depends:       base >=4.12 && <4.13
                        , caani
+                       , text
   default-language:    Haskell2010

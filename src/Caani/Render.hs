@@ -69,9 +69,9 @@ applyBitmap (offsetW,offsetT) v@((w,h),bitmap) mutImage color@(cr,cg,cb) u@(a,b)
       p = fromIntegral $ bitmap ! (a + b * w)
       (r1,g1,b1) = fromHsvNorm (cr,  (p / 255) * cg, cb)
       (r2,g2,b2) = add (r1,g1,b1) (20/255,20/255,20/255) (p/255)
-      ra = (fromIntegral $ truncate (r2 * 255))
-      ga = (fromIntegral $ truncate (g2 * 255))
-      ba = (fromIntegral $ truncate (b2 * 255))
+      ra = fromIntegral $ truncate (r2 * 255)
+      ga = fromIntegral $ truncate (g2 * 255)
+      ba = fromIntegral $ truncate (b2 * 255)
       qx = PixelRGBA8 ra ga ba 255
       m = writePixel mutImage (a + offsetW) (offsetT + b) qx
 
