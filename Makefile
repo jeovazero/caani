@@ -13,5 +13,4 @@ init-cabal-nix:
 	nix-shell -p cabal2nix --run 'cabal2nix . > default.nix'
  
 docker-image:
-	echo "Not implemented :("
-	#nix-build docker.nix -o image
+	nix-build docker.nix -o image
