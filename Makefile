@@ -8,9 +8,3 @@ build:
 
 artifact:
 	nix-build artifact.nix
-
-cabal2nix:
-	cabal2nix . > default.nix
-
-init-cabal-nix:
-	nix-shell -p cabal2nix --run 'cabal2nix . > default.nix'
