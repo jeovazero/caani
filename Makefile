@@ -6,11 +6,11 @@ dev:
 build:
 	nix-build release.nix
 
+artifact:
+	nix-build artifact.nix
+
 cabal2nix:
 	cabal2nix . > default.nix
 
 init-cabal-nix:
 	nix-shell -p cabal2nix --run 'cabal2nix . > default.nix'
- 
-docker-image:
-	nix-build docker.nix -o image
