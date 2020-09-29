@@ -4,9 +4,8 @@ module Main where
 
 import Caani (caani, CaaniConfig(..))
 import System.Environment (lookupEnv, getArgs)
-import qualified Data.Text.IO as TIO
-import qualified Data.Text as T
 import Data.Maybe (fromMaybe)
+import qualified Data.Text.IO as TIO
 
 getResourceDir = fmap (fromMaybe "./resources") (lookupEnv "RESOURCE_DIR")
 
@@ -14,6 +13,7 @@ data CLI
   = CLIOutput String
   | CLIError String
   | CLIHelp
+  deriving (Eq, Show)
 
 help = unlines
   [ "usage:"
@@ -37,8 +37,8 @@ main = do
   args <- getArgs
   let cli = parse args Nothing
   case cli of
-    CLIHelp -> TIO.putStrLn . T.pack $ help
-    CLIError err -> TIO.putStrLn . T.pack $ err
+    CLIHelp -> putStr help
+    CLIError err -> putStr err
     CLIOutput out -> do
       input <- TIO.getContents
       resourceDir <- getResourceDir
@@ -51,16 +51,16 @@ main = do
       })
       case r of
         Right () ->
-          TIO.putStrLn $ T.concat
+          putStrLn $ concat
             [ "\n"
-            , "  Yay 🎉 !!! The image was saved in '"
-            , T.pack out
+            , "  Yay!!! The image was saved in '"
+            , out
             , "'\n"
             ]
         Left err ->
-          TIO.putStrLn $ T.concat
+          putStrLn $ concat
             [ "\n"
-            , "Error 🙈: "
-            , T.pack . show $ err
+            , "Error: "
+            , show $ err
             , "\n"
             ]

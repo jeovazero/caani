@@ -17,8 +17,11 @@ import Control.Exception (SomeException(..), Handler(..), catches, throwIO)
 
 -- | Naive :(
 dimensions :: T.Text -> (Int, Int)
-dimensions text = (maximum $ fmap T.length lns, length lns)
-  where lns = T.lines text
+dimensions text =
+  case tLines of
+    [] -> (0,0)
+    lines' -> (maximum $ fmap T.length lines', length lines')
+  where tLines = T.lines text
 
 sizePx, margin :: Int
 sizePx = 24
