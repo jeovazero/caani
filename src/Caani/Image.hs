@@ -1,21 +1,28 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Caani.Image (createImage, savePng, MutImage,toPixel) where
+
+module Caani.Image
+    ( createImage,
+      savePng,
+      MutImage,
+      toPixel,
+    )
+where
 
 import Codec.Picture
-import Data.Vector (empty, (!), Vector, fromList)
-import Codec.Picture.Types (freezeImage, MutableImage, createMutableImage)
-import Control.Monad.Primitive (PrimMonad(PrimState))
+import Codec.Picture.Types (MutableImage, createMutableImage, freezeImage)
+import Control.Monad.Primitive (PrimMonad (PrimState))
+import Data.Vector ((!), Vector, empty, fromList)
 
 type MutImage = MutableImage (PrimState IO) PixelRGBA8
 
-toPixel (r,g,b) =
-  PixelRGBA8 (fromIntegral r) (fromIntegral g) (fromIntegral b) 255
+toPixel (r, g, b) =
+    PixelRGBA8 (fromIntegral r) (fromIntegral g) (fromIntegral b) 255
 
 createImage width height background =
-  createMutableImage width height (toPixel background)
+    createMutableImage width height (toPixel background)
 
 savePng :: String -> MutImage -> IO ()
 savePng path mutImage = do
-  im <- freezeImage mutImage
-  writePng path im
-  pure ()
+    im <- freezeImage mutImage
+    writePng path im
+    pure ()

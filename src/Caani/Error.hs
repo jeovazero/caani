@@ -1,34 +1,35 @@
-module Caani.Error (
-  CaaniError(..),
-  CaaniErrorType(..),
-  caanify,
-  tryIO,
-  tryCaani,
-  tryOrThrow,
-  rightOrThrow
-  ) where
+module Caani.Error
+    ( CaaniError (..),
+      CaaniErrorType (..),
+      caanify,
+      tryIO,
+      tryCaani,
+      tryOrThrow,
+      rightOrThrow,
+    )
+where
 
-import Control.Exception (catches, Handler(..), Exception, try, throwIO)
-import Control.Exception.Base (IOException)
+import Caani.Font (FreeTypeError (..))
+import Control.Exception (Exception, Handler (..), catches, throwIO, try)
 import Control.Exception (SomeException)
-import Caani.Font (FreeTypeError(..))
 import Control.Exception (catch)
+import Control.Exception.Base (IOException)
 
 data CaaniError
-  = CaaniError CaaniErrorType
-  deriving (Show, Eq)
+    = CaaniError CaaniErrorType
+    deriving (Show, Eq)
 
 instance Exception CaaniError
 
 data CaaniErrorType
-  = BoundaryLimit
-  | LoadFileError
-  | LoadTagError
-  | LoadFontError
-  | UnaexpectedFontError String
-  | InvalidCode
-  | UnknownError String
-  deriving (Show, Eq)
+    = BoundaryLimit
+    | LoadFileError
+    | LoadTagError
+    | LoadFontError
+    | UnaexpectedFontError String
+    | InvalidCode
+    | UnknownError String
+    deriving (Show, Eq)
 
 freetypeHandler :: FreeTypeError -> IO CaaniError
 freetypeHandler (FreeTypeError e) = pure . CaaniError . UnaexpectedFontError $ e
@@ -41,30 +42,31 @@ fallbackHandler errorFallback err = pure . CaaniError . errorFallback $ show err
 
 caanify :: IO a -> IO (Either CaaniError ())
 caanify effect = do
-  catches
-    (effect >>= \_ -> pure $ Right ())
-    (fmap
-      (fmap Left)
-      [Handler freetypeHandler
-      , Handler caaniHandler
-      , Handler $ fallbackHandler UnknownError
-      ])
+    catches
+        (effect >>= \_ -> pure $ Right ())
+        ( fmap
+              (fmap Left)
+              [ Handler freetypeHandler,
+                Handler caaniHandler,
+                Handler $ fallbackHandler UnknownError
+              ]
+        )
 
 tryCaani :: IO a -> (String -> CaaniErrorType) -> IO (Either CaaniError a)
 tryCaani effect errorType =
-  catch
-    (effect >>= \a -> pure $ Right a)
-    (fmap Left . fallbackHandler errorType)
+    catch
+        (effect >>= \a -> pure $ Right a)
+        (fmap Left . fallbackHandler errorType)
 
 tryIO :: IO a -> IO (Either IOException a)
 tryIO = try
 
 rightOrThrow :: IO (Either a b) -> CaaniErrorType -> IO b
 rightOrThrow ioEither etype =
-  ioEither >>= \result ->
-    case result of
-      Left _ -> throwIO $ CaaniError etype
-      Right r -> pure r
+    ioEither >>= \result ->
+        case result of
+            Left _ -> throwIO $ CaaniError etype
+            Right r -> pure r
 
 tryOrThrow :: IO a -> CaaniErrorType -> IO a
 tryOrThrow eff = rightOrThrow (tryIO eff)
