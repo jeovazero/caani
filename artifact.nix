@@ -1,7 +1,12 @@
 { compiler ? "ghc865" }:
 let
   pkgs = import ./nix/source.nix { json = ./nix/source.json; };
-  caani = import ./release.nix {};
+  caani =
+    if pkgs.stdenv.isLinux
+    then
+      import ./static.nix {}
+    else
+      pkgs.haskell.lib.justStaticExecutables (import ./release.nix {});
   tar = pkgs.gnutar;
   upx = pkgs.upx;
 in 
