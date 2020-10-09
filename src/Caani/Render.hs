@@ -10,21 +10,9 @@ import Caani.Color (add, fromHsvNorm)
 import qualified Caani.Font as Font (FontFace, Glyph (..), loadChar)
 import qualified Caani.Highlight as H (ColorWord (..))
 import Caani.Image (MutImage)
-import Codec.Picture
-import Data.Bits (Bits ((.&.), complement, shiftR))
-import Data.Fixed (mod')
-import qualified Data.Set as S
+import Codec.Picture ( PixelRGBA8(PixelRGBA8), Pixel(writePixel) )
 import qualified Data.Text as T
-import Data.Vector ((!), Vector, empty, fromList)
-import Debug.Trace (traceM)
-import qualified Graphics.Rendering.FreeType.Internal as FT
-import qualified Graphics.Rendering.FreeType.Internal.Bitmap as BT
-import qualified Graphics.Rendering.FreeType.Internal.Face as Face
-import qualified Graphics.Rendering.FreeType.Internal.FaceType as FTF
-import qualified Graphics.Rendering.FreeType.Internal.GlyphSlot as GS
-import qualified Graphics.Rendering.FreeType.Internal.Library as FTL
-import qualified Graphics.Rendering.FreeType.Internal.PrimitiveTypes as FP
-import qualified Graphics.Rendering.FreeType.Internal.Vector as FV
+import Data.Vector ((!))
 
 data WorldConfig = WorldConfig
     { wFace :: Font.FontFace,
@@ -45,14 +33,11 @@ renderLine' accOffset worldConfig (cw:cws) line = do
     renderLine' accOffset' worldConfig cws line
 
 drawWord :: Int -> WorldConfig -> H.ColorWord -> Int -> IO Int
-drawWord gLeftOffset worldConfig cw@(H.ColorWord word color) line = do
+drawWord gLeftOffset worldConfig (H.ColorWord word color) line = do
     let face = wFace worldConfig
         base = wBaseWidth worldConfig
         sizePx = wSize worldConfig
         gTopOffset = truncate $ fromIntegral (sizePx * line) * 1.2
-        offLeft = wOffsetLeft worldConfig
-        offTop = wOffsetTop worldConfig
-        mutImage = wImage worldConfig
     bitmapList <- sequence $ fmap (Font.loadChar face base) $ T.unpack word
     renderWord (gLeftOffset, gTopOffset) bitmapList worldConfig color
 
@@ -80,6 +65,7 @@ applyBitmap (offsetW, offsetT) v@((w, h), bitmap) mutImage color@(cr, cg, cb) u@
         qx = PixelRGBA8 ra ga ba 255
         m = writePixel mutImage (a + offsetW) (offsetT + b) qx
 
-nextPixel (a, b) (c, d)
+nextPixel :: (Eq a, Num a) => (a, a) -> (a, a) -> (a, a)
+nextPixel (a, b) (c, _)
     | a + 1 == c = (0, b + 1)
     | otherwise = (a + 1, b)
