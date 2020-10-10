@@ -1,18 +1,15 @@
-{ nixpkgs ? import ./nix/source.nix { json = ./nix/source.json; }
- }:
+{ nixpkgs ? import ./nix/pinned.nix }:
 let
   inherit (nixpkgs) pkgs;
   inherit (pkgs) haskell;
-  haskellPackages = haskell.packages.ghc865;
+  haskellPackages = haskell.packages.ghc884;
   cabal2nix = pkgs.cabal2nix;
-
   project = (import ./release.nix {});
 in
 pkgs.stdenv.mkDerivation {
   name = "shell";
   buildInputs = project.env.nativeBuildInputs ++ [
     haskellPackages.cabal-install
-    pkgs.fira-code
     haskellPackages.ghcid
     cabal2nix
   ];

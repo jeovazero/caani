@@ -1,12 +1,12 @@
-{ compiler ? "ghc865" }:
+{ compiler ? "ghc884", pkgs ? import ./nix/pinned.nix }:
 let
-  pkgs = import ./nix/source.nix { json = ./nix/source.json; };
+  caani-release = import ./release.nix {};
   caani =
     if pkgs.stdenv.isLinux
     then
       import ./static.nix {}
     else
-      pkgs.haskell.lib.justStaticExecutables (import ./release.nix {});
+      pkgs.haskell.lib.justStaticExecutables caani-release;
   tar = pkgs.gnutar;
   upx = pkgs.upx;
 in 
@@ -14,8 +14,8 @@ pkgs.stdenv.mkDerivation {
     name = "artifact";
     buildInputs = [ tar upx ];
     src = ./resources;
-    buildPhase = "mkdir -p $out/caani/resources";
     installPhase = ''
+      mkdir -p $out/caani/resources
       cp . $out/caani/resources -rv
       cp ${caani}/bin/caani $out/caani
       cd $out/caani
