@@ -1,8 +1,10 @@
 let
   compiler = "ghc884";
-  staticNixRepo = builtins.fetchGit {
-    "url" = "git@github.com:nh2/static-haskell-nix.git";
-    "rev" = "382150290ba43b6eb41981c1ab3b32aa31798140";
+  staticNixRepo = builtins.fetchTarball {
+    name = "static-haskell-nix";
+    url = "https://github.com/nh2/static-haskell-nix/archive/382150290ba43b6eb41981c1ab3b32aa31798140.tar.gz";
+    # Hash obtained using `nix-prefetch-url --unpack <url>`
+    sha256 = "0zsyplzf1k235rl26irm27y5ljd8ciayw80q575msxa69a9y2nvd";
   };
   pinned = import ./nix/pinned.nix { withPatches = true; };
   myPkgs = (pinned { system = "x86_64-linux"; }).pkgs;

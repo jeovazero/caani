@@ -1,12 +1,13 @@
-{ compiler ? "ghc884", pkgs ? import ./nix/pinned.nix }:
+{ compiler ? "ghc884", pinned ? import ./nix/pinned.nix {} }:
 let
+  nixpkgs = pinned {};
+  inherit (nixpkgs) pkgs;
+  inherit (pkgs) stdenv fixDarwinDylibNames;
   caani-release = import ./release.nix {};
   caani =
     if pkgs.stdenv.isLinux
-    then
-      import ./static.nix {}
-    else
-      pkgs.haskell.lib.justStaticExecutables caani-release;
+    then import ./static.nix
+    else pkgs.haskell.lib.justStaticExecutables caani-release;
   tar = pkgs.gnutar;
   upx = pkgs.upx;
 in 
