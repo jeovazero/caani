@@ -67,10 +67,9 @@ $ ./result/bin/caani -h
 
 #### Project
 
-- [ ] Compile the project with the `-Wall` flag 🙃
-- [ ] Use a pinned nixpkgs from the channel 20.09
-- [ ] Refactor for a better structure
-- [ ] Upgrade the freetype2 library to 0.2.0
+- [x] Compile the project with the `-Wall` flag 🙃
+- [x] Use a pinned nixpkgs from the channel 20.09
+- [x] Upgrade the freetype2 library to 0.2.0
 - [ ] Add a formatter
 - [ ] Distribute some binaries
 - [ ] Tests? CI? Hlint?
