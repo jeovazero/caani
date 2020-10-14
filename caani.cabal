@@ -34,6 +34,7 @@ library
                        , ghc-syntax-highlighter >= 0.0.6 && < 0.0.7
                        , primitive >= 0.7.0.1 && < 0.8
                        , Rasterific >= 0.7.5.2 && < 0.8
+  ghc-options:         -Wall
 
 executable caani
   main-is:             src/Main.hs
@@ -43,3 +44,4 @@ executable caani
                        , caani
                        , text >= 1.2.4 && < 1.3
   default-language:    Haskell2010
+  ghc-options:         -Wall

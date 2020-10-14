@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Caani.Color
-    ( fromHsvNorm,
+    ( fromHsv,
       add,
     )
 where
@@ -9,6 +9,7 @@ where
 import Data.Fixed (mod')
 
 -- from https://en.wikipedia.org/wiki/HSL_and_HSV
+fromHsv :: (RealFrac a) => (a, a, a) -> (a, a, a)
 fromHsv (h, s, v) = (r, g, b)
     where
         c = v * s
@@ -16,14 +17,11 @@ fromHsv (h, s, v) = (r, g, b)
         x = c * (1 - abs ((mod' (hi) 2) - 1))
         m = v - c
         (r', g', b') = rgbh (hi, c, x)
-        r = fromIntegral $ truncate $ (r' + m) * 255
-        g = fromIntegral $ truncate $ (g' + m) * 255
-        b = fromIntegral $ truncate $ (b' + m) * 255
+        r = (r' + m)
+        g = (g' + m)
+        b = (b' + m)
 
-fromHsvNorm (h, s, v) = (r / 255, g / 255, b / 255)
-    where
-        (r, g, b) = fromHsv (h, s, v)
-
+rgbh :: (Ord a, Num a) => (a, a, a) -> (a, a, a)
 rgbh (h, c, x)
     | h >= 0 && h <= 1 = (c, x, 0)
     | h > 1 && h <= 2 = (x, c, 0)
@@ -38,4 +36,4 @@ add :: (Float, Float, Float) -> (Float, Float, Float) -> Float -> (Float, Float,
 add (r1, g1, b1) (r2, g2, b2) a =
     (add' r1 r2 a, add' g1 g2 a, add' b1 b2 a)
     where
-        add' x y a = x * a + y - y * a
+        add' x y alpha = x * alpha + y - y * alpha

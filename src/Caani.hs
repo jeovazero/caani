@@ -8,14 +8,14 @@ module Caani
     )
 where
 
-import Caani.Error (CaaniError (..), CaaniErrorType (..), caanify, tryCaani, tryOrThrow)
+import Caani.Error (CaaniError (..), CaaniErrorType (..), caanify, tryCaani)
 import Caani.Font (FontFace, gWidth, loadChar, loadFontFace)
 import Caani.Highlight (highlightHaskell)
-import Caani.Image (createImage, savePng, toPixel)
+import Caani.Image (savePng, toPixel)
 import Caani.Render (WorldConfig (..), renderLine)
-import Codec.Picture (Image (..), PixelRGBA8 (..), convertRGBA8, readPng, writePng)
+import Codec.Picture (Image (..), PixelRGBA8 (..), convertRGBA8, readPng)
 import Codec.Picture.Types (thawImage)
-import Control.Exception (Handler (..), SomeException (..), catches, throwIO)
+import Control.Exception (throwIO)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import Graphics.Rasterific
@@ -34,12 +34,13 @@ sizePx, margin :: Int
 sizePx = 24
 margin = 2 * sizePx
 
-corner, flagWidth, flagHeight, topBorderHeight, offsetFlag :: Float
+corner, flagWidth, flagHeight, topBorderHeight, offsetFlag, lineHeight :: Float
 corner = 11
 flagWidth = 44
 flagHeight = 56
 topBorderHeight = 20
 offsetFlag = 20
+lineHeight = 1.2
 
 highlightWith :: FontFace -> Image PixelRGBA8 -> (T.Text, (Int, Int)) -> String -> IO ()
 highlightWith face tagBitmap (code, (w, h)) outPath = do
@@ -51,7 +52,7 @@ highlightWith face tagBitmap (code, (w, h)) outPath = do
     let tokens = highlightHaskell code
     let width = w * base + margin
     -- 1.2 is for the line height
-    let height = (truncate $ fromIntegral (h * sizePx) * 1.2) + margin
+    let height = (truncate $ fromIntegral (h * sizePx) * lineHeight) + margin
     -- 76 is a magic number XD
     let frameWidth = width + 76 + margin
     let frameHeight = height + margin
@@ -130,8 +131,8 @@ loadTagImage tagPath =
                 (Right . convertRGBA8)
 
 loadFontFace' :: Integral a => String -> a -> IO (Either CaaniError FontFace)
-loadFontFace' fontPath sizePx =
-    tryCaani (loadFontFace fontPath sizePx) (const LoadFontError)
+loadFontFace' fontPath sizePx' =
+    tryCaani (loadFontFace fontPath sizePx') (const LoadFontError)
 
 caani :: CaaniConfig -> IO (Either CaaniError ())
 caani (CaaniConfig {..}) = do

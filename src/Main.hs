@@ -7,6 +7,7 @@ import Data.Maybe (fromMaybe)
 import qualified Data.Text.IO as TIO
 import System.Environment (getArgs, lookupEnv)
 
+getResourceDir :: IO String
 getResourceDir = fmap (fromMaybe "./resources") (lookupEnv "RESOURCE_DIR")
 
 data CLI
@@ -15,6 +16,7 @@ data CLI
     | CLIHelp
     deriving (Eq, Show)
 
+help :: String
 help =
     unlines
         [ "usage:",

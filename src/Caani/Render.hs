@@ -6,13 +6,13 @@ module Caani.Render
     )
 where
 
-import Caani.Color (add, fromHsvNorm)
+import Caani.Color (add, fromHsv)
 import qualified Caani.Font as Font (FontFace, Glyph (..), loadChar)
 import qualified Caani.Highlight as H (ColorWord (..))
 import Caani.Image (MutImage)
-import Codec.Picture ( PixelRGBA8(PixelRGBA8), Pixel(writePixel) )
+import Codec.Picture (Pixel8,  PixelRGBA8(PixelRGBA8), Pixel(writePixel) )
 import qualified Data.Text as T
-import Data.Vector ((!))
+import Data.Vector (Vector, (!))
 
 data WorldConfig = WorldConfig
     { wFace :: Font.FontFace,
@@ -22,6 +22,12 @@ data WorldConfig = WorldConfig
       wOffsetTop :: Int,
       wImage :: MutImage
     }
+
+lineHeight :: Float
+lineHeight = 1.2
+
+toPixel8 :: Integer -> Pixel8
+toPixel8 = fromIntegral
 
 renderLine :: WorldConfig -> [H.ColorWord] -> Int -> IO ()
 renderLine = renderLine' 0
@@ -37,7 +43,7 @@ drawWord gLeftOffset worldConfig (H.ColorWord word color) line = do
     let face = wFace worldConfig
         base = wBaseWidth worldConfig
         sizePx = wSize worldConfig
-        gTopOffset = truncate $ fromIntegral (sizePx * line) * 1.2
+        gTopOffset = truncate $ fromIntegral (sizePx * line) * lineHeight
     bitmapList <- sequence $ fmap (Font.loadChar face base) $ T.unpack word
     renderWord (gLeftOffset, gTopOffset) bitmapList worldConfig color
 
@@ -51,17 +57,18 @@ renderWord (gLeft, gTop) (Font.Glyph w h l t bs buffer:xs) worldConfig color =
         fLeft = l + gLeft + (wOffsetLeft worldConfig)
         fTop = (wSize worldConfig) - t + gTop + (wOffsetTop worldConfig)
 
+applyBitmap :: (Int, Int) -> ((Int, Int), Vector Int) -> MutImage -> (Float, Float, Float) -> (Int, Int) -> IO ()
 applyBitmap (offsetW, offsetT) v@((w, h), bitmap) mutImage color@(cr, cg, cb) u@(a, b)
     | b + 1 >= h && a + 1 >= w = pure ()
     | otherwise = m >> applyBitmap (offsetW, offsetT) v mutImage color next
     where
         next = nextPixel u $ fst v
         p = fromIntegral $ bitmap ! (a + b * w)
-        (r1, g1, b1) = fromHsvNorm (cr, (p / 255) * cg, cb)
+        (r1, g1, b1) = fromHsv (cr, (p / 255) * cg, cb)
         (r2, g2, b2) = add (r1, g1, b1) (20 / 255, 20 / 255, 20 / 255) (p / 255)
-        ra = fromIntegral $ truncate (r2 * 255)
-        ga = fromIntegral $ truncate (g2 * 255)
-        ba = fromIntegral $ truncate (b2 * 255)
+        ra = toPixel8 $ truncate (r2 * 255)
+        ga = toPixel8 $ truncate (g2 * 255)
+        ba = toPixel8 $ truncate (b2 * 255)
         qx = PixelRGBA8 ra ga ba 255
         m = writePixel mutImage (a + offsetW) (offsetT + b) qx
 
