@@ -11,3 +11,6 @@ artifact:
 
 format:
 	stylish-haskell -irv .
+
+lint:
+	hlint .
