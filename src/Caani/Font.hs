@@ -1,8 +1,15 @@
-module Caani.Font (Glyph (..), loadChar, loadFontFace, FontFace, FreeTypeError (..)) where
+module Caani.Font
+    ( Glyph (..),
+      loadChar,
+      loadFontFace,
+      FontFace,
+      FreeTypeError (..)
+    )
+where
 
 import Control.Exception.Base (Exception)
 import qualified Data.Vector as Vec (Vector, empty, fromList)
-import Foreign (Word8, Storable (peek))
+import Foreign (Storable(peek), Word8)
 import Foreign.Marshal (peekArray)
 import qualified FreeType.Core.Base as FT_Base
 import qualified FreeType.Core.Types as FT_Type
@@ -23,12 +30,12 @@ ubyteToInt u = if u < 0 then 256 + iu else iu
         iu = fromIntegral u
 
 data Glyph = Glyph
-    { gWidth :: Int,
-      gHeight :: Int,
-      gLeft :: Int,
-      gTop :: Int,
+    { gWidth     :: Int,
+      gHeight    :: Int,
+      gLeft      :: Int,
+      gTop       :: Int,
       gBaseWidth :: Int,
-      gBuffer :: Vec.Vector Int
+      gBuffer    :: Vec.Vector Int
     }
 
 loadChar :: FT_Base.FT_Face -> Int -> Char -> IO Glyph
@@ -37,7 +44,7 @@ loadChar _ base '\t' = pure $ Glyph 0 0 0 0 (2 * base) Vec.empty
 loadChar face base chr = do
     charCode <- FT_Base.ft_Get_Char_Index face $ fromIntegral $ fromEnum chr
     FT_Base.ft_Load_Glyph face charCode 0
-    faceRec <- peek face    
+    faceRec <- peek face
     let slot = FT_Base.frGlyph faceRec
     FT_Base.ft_Render_Glyph slot FT_Base.FT_RENDER_MODE_NORMAL
     slotRec <- peek slot

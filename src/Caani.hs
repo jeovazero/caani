@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module Caani
     ( caaniFromFile,
@@ -8,12 +8,12 @@ module Caani
     )
 where
 
-import Caani.Error (CaaniError (..), CaaniErrorType (..), caanify, tryCaani)
+import Caani.Error (CaaniError(..), CaaniErrorType(..), caanify, tryCaani)
 import Caani.Font (FontFace, gWidth, loadChar, loadFontFace)
 import Caani.Highlight (highlightHaskell)
 import Caani.Image (savePng, toPixel)
-import Caani.Render (WorldConfig (..), renderLine)
-import Codec.Picture (Image (..), PixelRGBA8 (..), convertRGBA8, readPng)
+import Caani.Render (WorldConfig(..), renderLine)
+import Codec.Picture (Image(..), PixelRGBA8(..), convertRGBA8, readPng)
 import Codec.Picture.Types (thawImage)
 import Control.Exception (throwIO)
 import qualified Data.Text as T
@@ -25,7 +25,7 @@ import Graphics.Rasterific.Texture (uniformTexture)
 dimensions :: T.Text -> (Int, Int)
 dimensions text =
     case tLines of
-        [] -> (0, 0)
+        []     -> (0, 0)
         lines' -> (maximum $ fmap T.length lines', length lines')
     where
         tLines = T.lines text
@@ -109,10 +109,10 @@ drawFrame tag (fullW, fullH) (w, h) =
 
 data CaaniConfig = CaaniConfig
     { fontPath :: String,
-      tagPath :: String,
+      tagPath  :: String,
       boundary :: (Int, Int),
-      outPath :: String,
-      code :: T.Text
+      outPath  :: String,
+      code     :: T.Text
     }
 
 caaniFromFile :: String -> CaaniConfig -> IO (Either CaaniError ())
@@ -120,7 +120,7 @@ caaniFromFile filepath config = do
     textE <- tryCaani (TIO.readFile filepath) (const LoadFileError)
     case textE of
         Right text -> caani (config {code = text})
-        Left err -> pure $ Left err
+        Left err   -> pure $ Left err
 
 loadTagImage :: String -> IO (Either CaaniError (Image PixelRGBA8))
 loadTagImage tagPath =

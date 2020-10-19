@@ -7,20 +7,20 @@ module Caani.Render
 where
 
 import Caani.Color (add, fromHsv)
-import qualified Caani.Font as Font (FontFace, Glyph (..), loadChar)
-import qualified Caani.Highlight as H (ColorWord (..))
+import qualified Caani.Font as Font (FontFace, Glyph(..), loadChar)
+import qualified Caani.Highlight as H (ColorWord(..))
 import Caani.Image (MutImage)
-import Codec.Picture (Pixel8,  PixelRGBA8(PixelRGBA8), Pixel(writePixel) )
+import Codec.Picture (Pixel(writePixel), Pixel8, PixelRGBA8(PixelRGBA8))
 import qualified Data.Text as T
 import Data.Vector (Vector, (!))
 
 data WorldConfig = WorldConfig
-    { wFace :: Font.FontFace,
-      wBaseWidth :: Int,
-      wSize :: Int,
+    { wFace       :: Font.FontFace,
+      wBaseWidth  :: Int,
+      wSize       :: Int,
       wOffsetLeft :: Int,
-      wOffsetTop :: Int,
-      wImage :: MutImage
+      wOffsetTop  :: Int,
+      wImage      :: MutImage
     }
 
 lineHeight :: Float

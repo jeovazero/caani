@@ -1,6 +1,6 @@
 module Main (main) where
 
-import qualified Prelude as P (IO, ($), unwords, print)
+import qualified Prelude as P (IO, print, unwords, ($))
 
 -- | Hue hue Comment
 

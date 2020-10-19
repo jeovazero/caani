@@ -9,8 +9,8 @@ module Caani.Error
     )
 where
 
-import Caani.Font (FreeTypeError (..))
-import Control.Exception (Exception, Handler (..), catches, throwIO, try)
+import Caani.Font (FreeTypeError(..))
+import Control.Exception (Exception, Handler(..), catches, throwIO, try)
 import Control.Exception (SomeException)
 import Control.Exception (catch)
 import Control.Exception.Base (IOException)
@@ -65,7 +65,7 @@ rightOrThrow :: IO (Either a b) -> CaaniErrorType -> IO b
 rightOrThrow ioEither etype =
     ioEither >>= \result ->
         case result of
-            Left _ -> throwIO $ CaaniError etype
+            Left _  -> throwIO $ CaaniError etype
             Right r -> pure r
 
 tryOrThrow :: IO a -> CaaniErrorType -> IO a

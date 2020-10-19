@@ -8,9 +8,9 @@ module Caani.Image
     )
 where
 
-import Codec.Picture ( writePng, PixelRGBA8(..) )
+import Codec.Picture (PixelRGBA8(..), writePng)
 import Codec.Picture.Types (MutableImage, createMutableImage, freezeImage)
-import Control.Monad.Primitive (PrimMonad (PrimState))
+import Control.Monad.Primitive (PrimMonad(PrimState))
 
 type MutImage = MutableImage (PrimState IO) PixelRGBA8
 

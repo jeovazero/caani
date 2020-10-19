@@ -2,7 +2,7 @@
 
 module Main where
 
-import Caani (CaaniConfig (..), caani)
+import Caani (CaaniConfig(..), caani)
 import Data.Maybe (fromMaybe)
 import qualified Data.Text.IO as TIO
 import System.Environment (getArgs, lookupEnv)
