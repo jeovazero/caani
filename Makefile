@@ -8,3 +8,6 @@ build:
 
 artifact:
 	nix-build artifact.nix
+
+format:
+	stylish-haskell -irv .

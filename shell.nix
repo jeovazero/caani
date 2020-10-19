@@ -2,17 +2,17 @@
 let
   nixpkgs = pinned {};
   inherit (nixpkgs) pkgs;
-  inherit (pkgs) haskell;
+  inherit (pkgs) haskell cabal2nix stylish-haskell;
   haskellPackages = haskell.packages.ghc884;
-  cabal2nix = pkgs.cabal2nix;
   project = (import ./release.nix {});
 in
 pkgs.stdenv.mkDerivation {
   name = "shell";
   buildInputs = project.env.nativeBuildInputs ++ [
-    haskellPackages.cabal-install
+    pkgs.cabal-install
     haskellPackages.ghcid
     cabal2nix
+    stylish-haskell
   ];
   # https://github.com/NixOS/nix/issues/599
   LOCALE_ARCHIVE="/usr/lib/locale/locale-archive";
