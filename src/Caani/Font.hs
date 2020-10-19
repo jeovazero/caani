@@ -1,9 +1,9 @@
 module Caani.Font
-    ( Glyph (..),
-      loadChar,
-      loadFontFace,
-      FontFace,
-      FreeTypeError (..)
+    ( Glyph (..)
+    , loadChar
+    , loadFontFace
+    , FontFace
+    , FreeTypeError (..)
     )
 where
 
@@ -14,7 +14,7 @@ import Foreign.Marshal (peekArray)
 import qualified FreeType.Core.Base as FT_Base
 import qualified FreeType.Core.Types as FT_Type
 
-data FreeTypeError = FreeTypeError String
+newtype FreeTypeError = FreeTypeError String
     deriving (Show, Eq)
 
 instance Exception FreeTypeError

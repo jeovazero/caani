@@ -69,6 +69,6 @@ main = do
                         concat
                             [ "\n",
                               "Error: ",
-                              show $ err,
+                              show err,
                               "\n"
                             ]

@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Caani.Render
-    ( renderLine,
-      WorldConfig (..),
+    ( renderLine
+    , WorldConfig (..)
     )
 where
 
@@ -44,7 +44,7 @@ drawWord gLeftOffset worldConfig (H.ColorWord word color) line = do
         base = wBaseWidth worldConfig
         sizePx = wSize worldConfig
         gTopOffset = truncate $ fromIntegral (sizePx * line) * lineHeight
-    bitmapList <- sequence $ fmap (Font.loadChar face base) $ T.unpack word
+    bitmapList <- mapM (Font.loadChar face base) $ T.unpack word
     renderWord (gLeftOffset, gTopOffset) bitmapList worldConfig color
 
 renderWord :: (Int, Int) -> [Font.Glyph] -> WorldConfig -> (Float, Float, Float) -> IO Int
@@ -54,8 +54,8 @@ renderWord (gLeft, gTop) (Font.Glyph w h l t bs buffer:xs) worldConfig color =
     where
         m = applyBitmap (fLeft, fTop) ((w, h), buffer) (wImage worldConfig) color (0, 0)
         offset' = gLeft + bs
-        fLeft = l + gLeft + (wOffsetLeft worldConfig)
-        fTop = (wSize worldConfig) - t + gTop + (wOffsetTop worldConfig)
+        fLeft = l + gLeft + wOffsetLeft worldConfig
+        fTop = wSize worldConfig - t + gTop + wOffsetTop worldConfig
 
 applyBitmap :: (Int, Int) -> ((Int, Int), Vector Int) -> MutImage -> (Float, Float, Float) -> (Int, Int) -> IO ()
 applyBitmap (offsetW, offsetT) v@((w, h), bitmap) mutImage color@(cr, cg, cb) u@(a, b)

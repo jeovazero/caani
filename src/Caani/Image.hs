@@ -1,10 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Caani.Image
-    ( createImage,
-      savePng,
-      MutImage,
-      toPixel,
+    ( createImage
+    , savePng
+    , MutImage
+    , toPixel
     )
 where
 

@@ -2,9 +2,9 @@
 {-# LANGUAGE RecordWildCards   #-}
 
 module Caani
-    ( caaniFromFile,
-      caani,
-      CaaniConfig (..),
+    ( caaniFromFile
+    , caani
+    , CaaniConfig (..)
     )
 where
 
@@ -52,7 +52,7 @@ highlightWith face tagBitmap (code, (w, h)) outPath = do
     let tokens = highlightHaskell code
     let width = w * base + margin
     -- 1.2 is for the line height
-    let height = (truncate $ fromIntegral (h * sizePx) * lineHeight) + margin
+    let height = truncate (fromIntegral (h * sizePx) * lineHeight) + margin
     -- 76 is a magic number XD
     let frameWidth = width + 76 + margin
     let frameHeight = height + margin
@@ -73,7 +73,7 @@ highlightWith face tagBitmap (code, (w, h)) outPath = do
         Nothing -> throwIO $ CaaniError InvalidCode
         Just colorWords -> do
             let t = zipWith (\a b -> (a, b)) colorWords [0 ..]
-            sequence_ $ fmap (\(cws, ln) -> renderLine config cws ln) t -- It can throw FreeTypeError
+            mapM_ (uncurry (renderLine config)) t -- It can throw FreeTypeError
             savePng outPath mutImage
             pure ()
 
@@ -124,18 +124,17 @@ caaniFromFile filepath config = do
 
 loadTagImage :: String -> IO (Either CaaniError (Image PixelRGBA8))
 loadTagImage tagPath =
-    readPng tagPath
-        >>= pure
-            . either
-                (const (Left $ CaaniError LoadTagError))
-                (Right . convertRGBA8)
+    fmap (either
+            (const (Left $ CaaniError LoadTagError))
+            (Right . convertRGBA8))
+         (readPng tagPath)
 
 loadFontFace' :: Integral a => String -> a -> IO (Either CaaniError FontFace)
 loadFontFace' fontPath sizePx' =
     tryCaani (loadFontFace fontPath sizePx') (const LoadFontError)
 
 caani :: CaaniConfig -> IO (Either CaaniError ())
-caani (CaaniConfig {..}) = do
+caani CaaniConfig {..} = do
     let (w, h) = dimensions code
     let (boundW, boundH) = boundary
     tagE <- loadTagImage tagPath

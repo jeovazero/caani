@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Caani.Color
-    ( fromHsv,
-      add,
+    ( fromHsv
+    , add
     )
 where
 
@@ -13,13 +13,13 @@ fromHsv :: (RealFrac a) => (a, a, a) -> (a, a, a)
 fromHsv (h, s, v) = (r, g, b)
     where
         c = v * s
-        hi = (h / 60)
-        x = c * (1 - abs ((mod' (hi) 2) - 1))
+        hi = h / 60
+        x = c * (1 - abs (mod' hi 2 - 1))
         m = v - c
         (r', g', b') = rgbh (hi, c, x)
-        r = (r' + m)
-        g = (g' + m)
-        b = (b' + m)
+        r = r' + m
+        g = g' + m
+        b = b' + m
 
 rgbh :: (Ord a, Num a) => (a, a, a) -> (a, a, a)
 rgbh (h, c, x)

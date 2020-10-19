@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Caani.Highlight
-    ( highlightHaskell,
-      ColorWord (..),
+    ( highlightHaskell
+    , ColorWord (..)
     )
 where
 
@@ -31,7 +31,7 @@ colorWordFromToken (tok, text) = ColorWord text (colorFromToken tok)
 
 splitBy :: (ColorWord -> Bool) -> [ColorWord] -> [[ColorWord]]
 splitBy _ [] = []
-splitBy p list = line:(splitBy p list')
+splitBy p list = line:splitBy p list'
     where
         (line, rest) = span p list
         list' =
@@ -40,10 +40,10 @@ splitBy p list = line:(splitBy p list')
                 (ColorWord s c:xs) ->
                     case T.tail s of
                         "" -> xs
-                        s' -> (ColorWord s' c):xs
+                        s' -> ColorWord s' c:xs
 
 breakLines :: [ColorWord] -> [[ColorWord]]
 breakLines = splitBy (\(ColorWord t _) -> not $ T.any (== '\n') t)
 
 highlightHaskell :: T.Text -> Maybe [[ColorWord]]
-highlightHaskell = fmap breakLines . fmap (fmap colorWordFromToken) . GHC.tokenizeHaskell
+highlightHaskell = fmap (breakLines . fmap colorWordFromToken) . GHC.tokenizeHaskell
