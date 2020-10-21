@@ -1,17 +1,17 @@
-{ compiler ? "ghc884", pinned ? import ./nix/pinned.nix {} }:
+{ compiler ? "ghc884", pinned ? import ./nix/pinned.nix {}, isDynamic ? false }:
 let
   nixpkgs = pinned {};
   inherit (nixpkgs) pkgs;
-  inherit (pkgs) stdenv fixDarwinDylibNames;
+  inherit (pkgs) stdenv;
   caani-release = import ./release.nix {};
   caani =
-    if pkgs.stdenv.isLinux
+    if stdenv.isLinux && !isDynamic
     then import ./static.nix
     else pkgs.haskell.lib.justStaticExecutables caani-release;
   tar = pkgs.gnutar;
   upx = pkgs.upx;
 in 
-pkgs.stdenv.mkDerivation {
+stdenv.mkDerivation {
     name = "artifact";
     buildInputs = [ tar upx ];
     src = ./resources;

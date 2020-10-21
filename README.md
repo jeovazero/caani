@@ -70,7 +70,7 @@ $ ./result/bin/caani -h
 - [x] Compile the project with the `-Wall` flag 🙃
 - [x] Use a pinned nixpkgs from the channel 20.09
 - [x] Upgrade the freetype2 library to 0.2.0
-- [ ] Add a formatter
+- [x] Add a formatter
 - [ ] Distribute some binaries
 - [ ] Tests? CI? Hlint?
 

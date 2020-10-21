@@ -14,3 +14,6 @@ format:
 
 lint:
 	hlint .
+
+ci:
+	nix-shell --run "sh ci/run.sh"

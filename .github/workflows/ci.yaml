@@ -1,0 +1,23 @@
+name: Builds
+
+on:
+  pull_request:
+
+jobs:
+  ci_linux:
+    name: CI
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: cachix/install-nix-action@v10
+      with:
+        skip_adding_nixpkgs_channel: true
+    - uses: cachix/cachix-action@v6
+      with:
+        name: caani-hs
+        signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+    - name: create the artifact
+      run: |
+        make ci
+      env:
+        NIX_PATH: nixpkgs=https://github.com/nixos/nixpkgs-channels/tarball/c9d124e39dbeefc53c7b3e09fbfc2c26bcbd4845
