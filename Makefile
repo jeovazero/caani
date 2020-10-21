@@ -15,7 +15,7 @@ format:
 lint:
 	hlint .
 
-ci:
+ci-run:
 	nix-shell --run "sh ci/run.sh"
 
 cp-bin:

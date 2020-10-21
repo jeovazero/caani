@@ -5,7 +5,7 @@ on:
 
 jobs:
   ci_linux:
-    name: CI
+    name: Build and Hlint
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -16,8 +16,8 @@ jobs:
       with:
         name: caani-hs
         signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-    - name: create the artifact
+    - name: 
       run: |
-        make ci
+        make ci-run
       env:
         NIX_PATH: nixpkgs=https://github.com/nixos/nixpkgs-channels/tarball/c9d124e39dbeefc53c7b3e09fbfc2c26bcbd4845
