@@ -49,7 +49,7 @@ main = do
                 caani
                     ( CaaniConfig
                           { boundary = (200, 1000),
-                            fontPath = resourceDir ++ "/FiraCode-Medium.ttf",
+                            fontPath = resourceDir ++ "/FiraCode/FiraCode-Medium.ttf",
                             tagPath = resourceDir ++ "/haskell-flag.png",
                             code = input,
                             outPath = out
