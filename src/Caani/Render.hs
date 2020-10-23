@@ -1,39 +1,33 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Caani.Render
-    ( renderLine,
-      WorldConfig (..),
+    ( renderLine
+    , WorldConfig (..)
     )
 where
 
-import Caani.Color (add, fromHsvNorm)
-import qualified Caani.Font as Font (FontFace, Glyph (..), loadChar)
-import qualified Caani.Highlight as H (ColorWord (..))
+import Caani.Color (add, fromHsv)
+import qualified Caani.Font as Font (FontFace, Glyph(..), loadChar)
+import qualified Caani.Highlight as H (ColorWord(..))
 import Caani.Image (MutImage)
-import Codec.Picture
-import Data.Bits (Bits ((.&.), complement, shiftR))
-import Data.Fixed (mod')
-import qualified Data.Set as S
+import Codec.Picture (Pixel(writePixel), Pixel8, PixelRGBA8(PixelRGBA8))
 import qualified Data.Text as T
-import Data.Vector ((!), Vector, empty, fromList)
-import Debug.Trace (traceM)
-import qualified Graphics.Rendering.FreeType.Internal as FT
-import qualified Graphics.Rendering.FreeType.Internal.Bitmap as BT
-import qualified Graphics.Rendering.FreeType.Internal.Face as Face
-import qualified Graphics.Rendering.FreeType.Internal.FaceType as FTF
-import qualified Graphics.Rendering.FreeType.Internal.GlyphSlot as GS
-import qualified Graphics.Rendering.FreeType.Internal.Library as FTL
-import qualified Graphics.Rendering.FreeType.Internal.PrimitiveTypes as FP
-import qualified Graphics.Rendering.FreeType.Internal.Vector as FV
+import Data.Vector (Vector, (!))
 
 data WorldConfig = WorldConfig
-    { wFace :: Font.FontFace,
-      wBaseWidth :: Int,
-      wSize :: Int,
+    { wFace       :: Font.FontFace,
+      wBaseWidth  :: Int,
+      wSize       :: Int,
       wOffsetLeft :: Int,
-      wOffsetTop :: Int,
-      wImage :: MutImage
+      wOffsetTop  :: Int,
+      wImage      :: MutImage
     }
+
+lineHeight :: Float
+lineHeight = 1.2
+
+toPixel8 :: Integer -> Pixel8
+toPixel8 = fromIntegral
 
 renderLine :: WorldConfig -> [H.ColorWord] -> Int -> IO ()
 renderLine = renderLine' 0
@@ -45,15 +39,12 @@ renderLine' accOffset worldConfig (cw:cws) line = do
     renderLine' accOffset' worldConfig cws line
 
 drawWord :: Int -> WorldConfig -> H.ColorWord -> Int -> IO Int
-drawWord gLeftOffset worldConfig cw@(H.ColorWord word color) line = do
+drawWord gLeftOffset worldConfig (H.ColorWord word color) line = do
     let face = wFace worldConfig
         base = wBaseWidth worldConfig
         sizePx = wSize worldConfig
-        gTopOffset = truncate $ fromIntegral (sizePx * line) * 1.2
-        offLeft = wOffsetLeft worldConfig
-        offTop = wOffsetTop worldConfig
-        mutImage = wImage worldConfig
-    bitmapList <- sequence $ fmap (Font.loadChar face base) $ T.unpack word
+        gTopOffset = truncate $ fromIntegral (sizePx * line) * lineHeight
+    bitmapList <- mapM (Font.loadChar face base) $ T.unpack word
     renderWord (gLeftOffset, gTopOffset) bitmapList worldConfig color
 
 renderWord :: (Int, Int) -> [Font.Glyph] -> WorldConfig -> (Float, Float, Float) -> IO Int
@@ -63,23 +54,25 @@ renderWord (gLeft, gTop) (Font.Glyph w h l t bs buffer:xs) worldConfig color =
     where
         m = applyBitmap (fLeft, fTop) ((w, h), buffer) (wImage worldConfig) color (0, 0)
         offset' = gLeft + bs
-        fLeft = l + gLeft + (wOffsetLeft worldConfig)
-        fTop = (wSize worldConfig) - t + gTop + (wOffsetTop worldConfig)
+        fLeft = l + gLeft + wOffsetLeft worldConfig
+        fTop = wSize worldConfig - t + gTop + wOffsetTop worldConfig
 
+applyBitmap :: (Int, Int) -> ((Int, Int), Vector Int) -> MutImage -> (Float, Float, Float) -> (Int, Int) -> IO ()
 applyBitmap (offsetW, offsetT) v@((w, h), bitmap) mutImage color@(cr, cg, cb) u@(a, b)
     | b + 1 >= h && a + 1 >= w = pure ()
     | otherwise = m >> applyBitmap (offsetW, offsetT) v mutImage color next
     where
         next = nextPixel u $ fst v
         p = fromIntegral $ bitmap ! (a + b * w)
-        (r1, g1, b1) = fromHsvNorm (cr, (p / 255) * cg, cb)
+        (r1, g1, b1) = fromHsv (cr, (p / 255) * cg, cb)
         (r2, g2, b2) = add (r1, g1, b1) (20 / 255, 20 / 255, 20 / 255) (p / 255)
-        ra = fromIntegral $ truncate (r2 * 255)
-        ga = fromIntegral $ truncate (g2 * 255)
-        ba = fromIntegral $ truncate (b2 * 255)
+        ra = toPixel8 $ truncate (r2 * 255)
+        ga = toPixel8 $ truncate (g2 * 255)
+        ba = toPixel8 $ truncate (b2 * 255)
         qx = PixelRGBA8 ra ga ba 255
         m = writePixel mutImage (a + offsetW) (offsetT + b) qx
 
-nextPixel (a, b) (c, d)
+nextPixel :: (Eq a, Num a) => (a, a) -> (a, a) -> (a, a)
+nextPixel (a, b) (c, _)
     | a + 1 == c = (0, b + 1)
     | otherwise = (a + 1, b)

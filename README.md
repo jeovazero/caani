@@ -44,16 +44,30 @@ $ cat samples/code.hs | ./result/bin/caani -o docs/code.png
 
 It's needed to test the released binaries available [here](https://github.com/jeovazero/caani/releases). :see_no_evil:
 
+1. Download the artifact
+2.
+      ```sh
+      $ tar -xzf caani-Linux.tar.gz
+      $ cd caani
+      $ echo 'main = pure ()' | ./caani -o foo.png
+      ```
+
 ## Building
 
-With the [Nix](https://nixos.org/) installed:
+#### With the [Nix](https://nixos.org/) installed:
 
 ```sh
 $ make build
 $ ./result/bin/caani -h
 ```
 
-> I don't use Stack yet :(
+#### With [Cabal](https://www.haskell.org/cabal/) (cabal-install)
+
+```sh
+$ cabal new-build exe:caani
+$ make cp-bin
+$ ./caani -h
+```
 
 ## Roadmap
 
@@ -67,12 +81,11 @@ $ ./result/bin/caani -h
 
 #### Project
 
-- [ ] Compile the project with the `-Wall` flag 🙃
-- [ ] Use a pinned nixpkgs from the channel 20.09
-- [ ] Refactor for a better structure
-- [ ] Upgrade the freetype2 library to 0.2.0
-- [ ] Add a formatter
-- [ ] Distribute some binaries
+- [x] Compile the project with the `-Wall` flag 🙃
+- [x] Use a pinned nixpkgs from the channel 20.09
+- [x] Upgrade the freetype2 library to 0.2.0
+- [x] Add a formatter
+- [x] Distribute some binaries
 - [ ] Tests? CI? Hlint?
 
 ## Related Projects

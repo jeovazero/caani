@@ -25,20 +25,22 @@ jobs:
         draft: true
         prerelease: true
 
-  build_and_upload:
-    name: Build
+  build_and_upload_linux:
+    name: Build on GNU/Linux
     needs: create_release
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - uses: cachix/install-nix-action@v10
       with:
         skip_adding_nixpkgs_channel: true
+    - uses: cachix/cachix-action@v6
+      with:
+        name: caani-hs
+        signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
     - name: create the artifact
       run: |
+        cachix use static-haskell-nix
         make artifact
       env:
         NIX_PATH: nixpkgs=https://github.com/nixos/nixpkgs-channels/tarball/c9d124e39dbeefc53c7b3e09fbfc2c26bcbd4845
@@ -50,5 +52,52 @@ jobs:
       with:
         upload_url: ${{ needs.create_release.outputs.upload_url }}
         asset_path: ./result/caani.tar.gz
+        asset_name: caani-${{ runner.os }}.tar.gz
+        asset_content_type: application/gzip
+
+  build_and_upload_macos:
+    name: Build on Mac OS
+    needs: create_release
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-haskell@v1
+      id: setup-haskell
+      with:
+        ghc-version: '8.8.4'
+        cabal-version: '3.2.0.0'
+    - name: Freeze
+      run: cabal new-freeze
+    - name: Cabal cache
+      uses: actions/cache@v2
+      with:
+        path: |
+          ${{ steps.setup-haskell.outputs.cabal-store }}
+          dist-newstyle
+        key: ghc884-macOS-${{ hashFiles('cabal.project.freeze') }}
+    - name: Install upx
+      run: brew install upx
+    - name: Build binary
+      run: |
+        cabal new-build exe:caani
+        mkdir caani
+        cp $(find dist-newstyle -name caani -type f) caani/caani
+
+        # compressing the binary
+        chmod 755 caani/caani
+        upx caani/caani
+        chmod 555 caani/caani
+
+        # creating the artifact
+        cp -R resources caani
+        tar -czf caani.tar.gz caani
+    - name: Upload Release Asset
+      id: upload_release_asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create_release.outputs.upload_url }}
+        asset_path: caani.tar.gz
         asset_name: caani-${{ runner.os }}.tar.gz
         asset_content_type: application/gzip

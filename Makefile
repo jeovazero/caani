@@ -8,3 +8,15 @@ build:
 
 artifact:
 	nix-build artifact.nix
+
+format:
+	stylish-haskell -irv .
+
+lint:
+	hlint .
+
+ci-run:
+	nix-shell --run "sh ci/run.sh"
+
+cp-bin:
+	cp $$(find dist-newstyle -name caani -type f) ./caani
