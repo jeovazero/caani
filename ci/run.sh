@@ -1,10 +1,20 @@
+#!/bin/sh
+
+testFailure() {
+  [ $? -ne 0 ] && exit 1
+}
+
 echo -e "----Running the Hlint----\n"
 
 hlint .
 
+testFailure
+
 echo -e "\n\n----Building the artifact----\n"
 
 nix-build artifact.nix --arg isDynamic true
+
+testFailure
 
 echo -e "\n\n----Running the CLI----\n"
 
