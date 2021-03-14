@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: cachix/install-nix-action@v10
+    - uses: cachix/install-nix-action@v12
       with:
         skip_adding_nixpkgs_channel: true
     - uses: cachix/cachix-action@v6
@@ -59,6 +59,7 @@ jobs:
     name: Build on Mac OS
     needs: create_release
     runs-on: macos-latest
+    if: false
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-haskell@v1
