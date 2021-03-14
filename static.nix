@@ -11,6 +11,7 @@ let
   staticPkgs = (import "${staticNixRepo}/survey/default.nix" {
     inherit compiler;
     pkgs = myPkgs.pkgsMusl;
+    integer-simple = true;
     defaultCabalPackageVersionComingWithGhc = "Cabal_3_2_0_0";
   }).pkgs;
   caani = import ./release.nix { pkgs = staticPkgs; inherit compiler; };
